@@ -217,10 +217,10 @@ footer p{margin:0 0 8px;max-width:70ch}
   <form class="lockcard" id="lockForm" autocomplete="on">
     <div class="eyebrow">Private board</div>
     <h2>Counsel Watch</h2>
-    <p>Enter the password to open the listings.</p>
+    <p>Enter the password to open the listings. Capitals don't matter.</p>
     <input type="text" name="username" value="counsel-watch" autocomplete="username" hidden>
     <label class="sr" for="pw">Password</label>
-    <input id="pw" class="pw" type="password" autocomplete="current-password" placeholder="Password" required>
+    <input id="pw" class="pw" type="password" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="Password" required>
     <label class="remember"><input id="remember" type="checkbox" checked> Keep me signed in on this device</label>
     <button class="btn primary" id="unlockBtn" type="submit">Unlock</button>
     <p class="err" id="lockErr" role="alert"></p>
@@ -515,17 +515,25 @@ footer p{margin:0 0 8px;max-width:70ch}
   }
   $("#lockForm").addEventListener("submit", async e => {
     e.preventDefault();
-    const pw = $("#pw").value; const btn = $("#unlockBtn"); const err = $("#lockErr");
+    const pw = $("#pw").value.trim().toLowerCase(); const btn = $("#unlockBtn"); const err = $("#lockErr");
     if (!pw || !ENC || !PRIV) return;
     btn.disabled = true; btn.textContent = "Unlocking…"; err.textContent = "";
+    let raw;
     try{
-      const raw = await keyFromPassword(pw, PRIV);
+      raw = await keyFromPassword(pw, PRIV);
+      const kek = await crypto.subtle.importKey("raw", raw, "AES-GCM", false, ["decrypt"]);
+      await crypto.subtle.decrypt({name:"AES-GCM", iv:b64(PRIV.iv)}, kek, b64(PRIV.ct));
+    }catch(x){
+      err.textContent = "That password didn't work. Check it and try again.";
+      btn.disabled = false; btn.textContent = "Unlock"; return;
+    }
+    try{
       const data = await openWith(raw);
       if ($("#remember").checked) LS.set("cw-key", {salt: PRIV.salt, k: tob64(raw)});
       $("#pw").value = "";
       load(data);
     }catch(x){
-      err.textContent = "That password didn't work. Check it and try again.";
+      err.textContent = "The password is right, but the listings didn't open. Reload the page and try again.";
     }finally{ btn.disabled = false; btn.textContent = "Unlock"; }
   });
   $("#lockBtn").addEventListener("click", () => { LS.set("cw-key", null); state.jobs = new Map(); state.meta = null; showLock(); });
