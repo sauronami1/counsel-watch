@@ -44,7 +44,7 @@
   --chip:#222c37; --focus:#7aa7ff; color-scheme:dark;
 }
 *{box-sizing:border-box}
-[hidden],.lock[hidden],.panel[hidden],.toast[hidden],.btn[hidden]{display:none!important}
+[hidden],.lock[hidden],.panel[hidden],.toast[hidden],.btn[hidden],.sheet[hidden]{display:none!important}
 :root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
@@ -132,6 +132,17 @@ footer p{margin:0 0 8px;max-width:70ch}
 .err{color:var(--tape);font-size:14px;min-height:1.2em}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--paper);padding:8px 14px;border-radius:8px;font-size:13.5px;z-index:20}
+.sheet{position:fixed;inset:0;z-index:25;background:rgba(10,14,18,.45);display:flex;align-items:flex-end;justify-content:center}
+.sheetcard{width:100%;max-width:520px;background:var(--sheet);color:var(--ink);border-radius:14px 14px 0 0;padding:18px 16px calc(16px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:10px;box-shadow:0 -8px 30px rgba(0,0,0,.18)}
+.sheetcard h3{font-family:var(--display);font-size:21px;margin:0}
+.sheetcard p{margin:0;color:var(--ink-2);font-size:13.5px}
+.sheetcard .jobname{color:var(--ink);font-weight:600}
+.reasons{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.reasons .btn{justify-content:flex-start;padding:10px 12px;font-size:14px}
+.sheetfoot{display:flex;justify-content:space-between;gap:8px}
+@media (min-width:560px){.sheet{align-items:center}.sheetcard{border-radius:14px}}
+.learned{margin:6px 0 10px;padding-left:18px}
+.learned li{margin:2px 0}
 @media (max-width:520px){
   .job .head{flex-direction:column}
   .dates{text-align:left;flex-direction:row;flex-wrap:wrap;gap:2px 12px}
@@ -211,6 +222,11 @@ footer p{margin:0 0 8px;max-width:70ch}
     <h3>How this board works</h3>
     <p>Only people with the password can read this board: the listings are encrypted, and the page decrypts them on your device. Every morning a search runs across the Ontario Public Service, Ontario regulators and agencies, municipalities, federal bodies with Toronto offices, telecom carriers, banks and tech companies, legal job boards, and Job Bank. Each role is only added after its posting page is opened and confirmed open, in the right place, and posted in the last 30 days. Roles are re-checked daily and drop off when they close.</p>
     <p><span class="tag fit">Strong fit</span> means the work itself is policy, regulatory, telecom or privacy law. Other roles touch those areas but are partly commercial or general counsel work. Roles marked <span class="tag adj">Related role</span> are not lawyer positions but are policy, privacy or regulatory jobs where a law degree is a strong fit. <b>Saved</b>, <b>Applied</b> and <b>Not for me</b> sort roles into their own tabs; notes stay with each role.</p>
+    <div id="learnedBox" hidden>
+      <h3>What the search has learned</h3>
+      <p>From the roles you marked Not for me, the morning search now:</p>
+      <ul class="learned" id="learned"></ul>
+    </div>
     <p id="trackMode"></p>
   </footer>
 </div>
@@ -228,6 +244,15 @@ footer p{margin:0 0 8px;max-width:70ch}
   </form>
 </div>
 <div class="toast" id="toast" hidden role="status"></div>
+<div class="sheet" id="sheet" hidden>
+  <div class="sheetcard" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <h3 id="sheetTitle">Why isn't this one for you?</h3>
+    <p class="jobname" id="sheetJob"></p>
+    <p>Your answer teaches the morning search what to skip. Only a short role code and the reason are sent; notes and Saved/Applied stay on this device.</p>
+    <div class="reasons" id="reasons"></div>
+    <div class="sheetfoot"><button class="btn quiet" type="button" id="justHide">Just hide it</button><button class="btn quiet" type="button" id="sheetCancel">Cancel</button></div>
+  </div>
+</div>
 
 <script>
 (function(){
@@ -284,7 +309,7 @@ footer p{margin:0 0 8px;max-width:70ch}
   function describeMode(){
     const el = $("#trackMode");
     if (state.mode === "shared") el.textContent = "Saved, Applied, Not for me and notes are shared: they show up on every device and for anyone else with edit access.";
-    else if (state.mode === "local") el.textContent = "Saved, Applied, Not for me and notes stay on the device where you set them. They are never uploaded.";
+    else if (state.mode === "local") el.textContent = "Saved, Applied, Not for me and notes stay on the device where you set them. The only thing that leaves the device is the reason you give for Not for me, sent with a short role code so the morning search can learn from it.";
     else el.textContent = "";
   }
 
@@ -366,7 +391,8 @@ footer p{margin:0 0 8px;max-width:70ch}
       j.term === "contract" ? el("span",{class:"tag",text:j.term_note || "Contract"}) : null,
       j.language && /bilingual/i.test(j.language) ? el("span",{class:"tag",text:"Bilingual EN/FR"}) : null,
       t === "saved" ? el("span",{class:"tag state",text:"Saved"}) : null,
-      t === "applied" ? el("span",{class:"tag state",text:"Applied" + (tr.updated ? " " + fmt(tr.updated.slice(0,10)) : "")}) : null
+      t === "applied" ? el("span",{class:"tag state",text:"Applied" + (tr.updated ? " " + fmt(tr.updated.slice(0,10)) : "")}) : null,
+      t === "hidden" && REASONS[tr.reason] ? el("span",{class:"tag",text:"Not for me · " + REASONS[tr.reason]}) : null
     );
     const dates = el("div",{class:"dates"},
       el("span",{text:"Posted " + (j.date_confidence === "approx" ? "≈ " : "") + ago(age)}),
@@ -378,7 +404,11 @@ footer p{margin:0 0 8px;max-width:70ch}
       j.work_mode && MODE[j.work_mode] ? el("span",{text:MODE[j.work_mode]}) : null,
       j.term === "permanent" ? el("span",{text:"Permanent"}) : null
     );
-    const btn = (label, st) => el("button",{class:"btn","aria-pressed": String(t===st), onclick:()=>setTrack(j.id,{state: t===st ? "" : st})}, label);
+    const btn = (label, st) => el("button",{class:"btn","aria-pressed": String(t===st), onclick:()=>{
+      if (st === "hidden" && t !== "hidden") return askReason(j);
+      if (st === "hidden" && t === "hidden" && tr.reason) sendFeedback(j.id, "undo");
+      setTrack(j.id,{state: t===st ? "" : st, reason: st === "hidden" ? "" : tr.reason});
+    }}, label);
     const noteOpen = state.notesOpen.has(j.id) || !!tr.note;
     const note = noteOpen ? el("textarea",{class:"note",id:"note-"+safeId(j.id),placeholder:"Notes: contacts, cover letter angle, follow-up date…","aria-label":"Notes for "+j.title}) : null;
     if (note){ note.value = tr.note || ""; note.addEventListener("change", ()=>setTrack(j.id,{note: note.value})); }
@@ -403,6 +433,63 @@ footer p{margin:0 0 8px;max-width:70ch}
         el("span",{class:"src",text:(j.source||"") + (j.last_verified ? " · checked " + fmt(String(j.last_verified).slice(0,10)) : "")})
       )
     );
+  }
+
+  // ---------- "Not for me" reasons -> feedback form (read by the morning search) ----------
+  const REASONS = {
+    too_commercial:"Too commercial / general counsel", not_my_area:"Not my practice area", too_senior:"Too senior",
+    too_junior:"Too junior", employer:"Not this employer", location:"Location or commute", contract:"Contract / temporary",
+    pay:"Pay too low", other:"Something else"
+  };
+  const FORM = "https://docs.google.com/forms/d/e/1FAIpQLSeqEmhLECyk2k3-Vk9smYhgmwvEAbQcRaIAHRQUqwD0u4-MEg/formResponse";
+  async function roleCode(id){
+    const h = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(String(id))));
+    return Array.from(h.slice(0,8), b => b.toString(16).padStart(2,"0")).join("");
+  }
+  async function postOne(item){
+    const body = new URLSearchParams({"entry.850714845": item.code, "entry.1098706956": item.reason});
+    await fetch(FORM, {method:"POST", mode:"no-cors", body});
+  }
+  async function sendFeedback(id, reason){
+    const item = {code: await roleCode(id), reason};
+    try{ await postOne(item); }
+    catch(e){ const q = LS.get("cw-outbox", []); q.push(item); LS.set("cw-outbox", q.slice(-50)); }
+  }
+  async function flushOutbox(){
+    const q = LS.get("cw-outbox", []); if (!q.length) return;
+    const left = [];
+    for (const item of q){ try{ await postOne(item); }catch(e){ left.push(item); } }
+    LS.set("cw-outbox", left);
+  }
+  let sheetJob = null, sheetReturn = null;
+  function askReason(j){
+    sheetJob = j; sheetReturn = document.activeElement;
+    $("#sheetJob").textContent = j.title + " · " + j.employer;
+    const box = $("#reasons"); box.replaceChildren();
+    for (const k in REASONS) box.append(el("button",{class:"btn",type:"button",onclick:()=>chooseReason(k)}, REASONS[k]));
+    $("#sheet").hidden = false;
+    const first = box.querySelector("button"); if (first) first.focus();
+  }
+  function closeSheet(){
+    $("#sheet").hidden = true; sheetJob = null;
+    if (sheetReturn && sheetReturn.isConnected) try{ sheetReturn.focus(); }catch(e){}
+  }
+  function chooseReason(k){
+    const j = sheetJob; if (!j) return closeSheet();
+    closeSheet();
+    setTrack(j.id, {state:"hidden", reason:k});
+    sendFeedback(j.id, k);
+    toast(k === "employer" ? "Hidden. The search will skip " + j.employer + " from now on." : "Hidden. The morning search will learn from this.");
+  }
+  $("#justHide").addEventListener("click", ()=>{ const j = sheetJob; closeSheet(); if (j) setTrack(j.id, {state:"hidden", reason:""}); });
+  $("#sheetCancel").addEventListener("click", closeSheet);
+  $("#sheet").addEventListener("click", e => { if (e.target.id === "sheet") closeSheet(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("#sheet").hidden) closeSheet(); });
+
+  function renderLearned(){
+    const rules = (state.meta && Array.isArray(state.meta.learned)) ? state.meta.learned.filter(Boolean) : [];
+    const ul = $("#learned"); ul.replaceChildren(...rules.map(r => el("li",{text:String(r)})));
+    $("#learnedBox").hidden = !rules.length;
   }
 
   function render(){
@@ -488,8 +575,9 @@ footer p{margin:0 0 8px;max-width:70ch}
     (data.jobs || []).forEach(j => m.set(j.id, j));
     state.jobs = m; state.meta = data.meta || null;
     state.mode = "local"; state.track = Object.assign({}, LS.get("cw-track", {}));
-    describeMode(); renderStatus(); render();
+    describeMode(); renderStatus(); renderLearned(); render();
     $("#lock").hidden = true; $("#lockBtn").hidden = false;
+    flushOutbox();
   }
   async function start(){
     try{
