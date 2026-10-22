@@ -463,17 +463,23 @@ footer p{margin:0 0 8px;max-width:70ch}
 
   // ---------- data ----------
   // ---------- encrypted data ----------
+  // keys/private.enc.json: RSA private key, AES-GCM under a PBKDF2 key from the password.
+  // data/jobs.enc.json: listings under a random AES key, wrapped with the RSA public key.
   const b64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
   const tob64 = u8 => btoa(String.fromCharCode(...u8));
-  let ENC = null;
+  let ENC = null, PRIV = null;
   async function keyFromPassword(pw, env){
     const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(pw), "PBKDF2", false, ["deriveBits"]);
     const bits = await crypto.subtle.deriveBits({name:"PBKDF2", hash:"SHA-256", salt:b64(env.salt), iterations:env.iter}, base, 256);
     return new Uint8Array(bits);
   }
   async function openWith(raw){
-    const key = await crypto.subtle.importKey("raw", raw, "AES-GCM", false, ["decrypt"]);
-    const plain = await crypto.subtle.decrypt({name:"AES-GCM", iv:b64(ENC.iv)}, key, b64(ENC.ct));
+    const kek = await crypto.subtle.importKey("raw", raw, "AES-GCM", false, ["decrypt"]);
+    const der = await crypto.subtle.decrypt({name:"AES-GCM", iv:b64(PRIV.iv)}, kek, b64(PRIV.ct));
+    const priv = await crypto.subtle.importKey("pkcs8", der, {name:"RSA-OAEP", hash:"SHA-256"}, false, ["decrypt"]);
+    const dataKey = await crypto.subtle.decrypt({name:"RSA-OAEP"}, priv, b64(ENC.wrapped));
+    const k = await crypto.subtle.importKey("raw", dataKey, "AES-GCM", false, ["decrypt"]);
+    const plain = await crypto.subtle.decrypt({name:"AES-GCM", iv:b64(ENC.iv)}, k, b64(ENC.ct));
     return JSON.parse(new TextDecoder().decode(plain));
   }
   function load(data){
@@ -486,16 +492,17 @@ footer p{margin:0 0 8px;max-width:70ch}
   }
   async function start(){
     try{
-      const r = await fetch("data/jobs.enc.json?t=" + Date.now(), {cache:"no-store"});
-      if (!r.ok) throw new Error("http " + r.status);
-      ENC = await r.json();
+      const t = "?t=" + Date.now();
+      const [r1, r2] = await Promise.all([fetch("data/jobs.enc.json" + t, {cache:"no-store"}), fetch("keys/private.enc.json" + t, {cache:"no-store"})]);
+      if (!r1.ok || !r2.ok) throw new Error("http " + r1.status + "/" + r2.status);
+      ENC = await r1.json(); PRIV = await r2.json();
     }catch(e){
       state.mode = "none"; render();
       $("#status").replaceChildren(el("span",{class:"stale",text:"Couldn't load the listings. Check your connection and reload."}));
       return;
     }
     const saved = LS.get("cw-key", null);
-    if (saved && saved.salt === ENC.salt){
+    if (saved && saved.salt === PRIV.salt){
       try{ load(await openWith(b64(saved.k))); return; }catch(e){ LS.set("cw-key", null); }
     }
     showLock();
@@ -509,12 +516,12 @@ footer p{margin:0 0 8px;max-width:70ch}
   $("#lockForm").addEventListener("submit", async e => {
     e.preventDefault();
     const pw = $("#pw").value; const btn = $("#unlockBtn"); const err = $("#lockErr");
-    if (!pw || !ENC) return;
+    if (!pw || !ENC || !PRIV) return;
     btn.disabled = true; btn.textContent = "Unlocking…"; err.textContent = "";
     try{
-      const raw = await keyFromPassword(pw, ENC);
+      const raw = await keyFromPassword(pw, PRIV);
       const data = await openWith(raw);
-      if ($("#remember").checked) LS.set("cw-key", {salt: ENC.salt, k: tob64(raw)});
+      if ($("#remember").checked) LS.set("cw-key", {salt: PRIV.salt, k: tob64(raw)});
       $("#pw").value = "";
       load(data);
     }catch(x){

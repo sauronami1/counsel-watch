@@ -1,8 +1,10 @@
 # counsel-watch
 
-Private, password-protected page. The data in `data/` is encrypted (AES-256-GCM, key from PBKDF2-SHA256) and is only readable with the password.
+Private, password-protected page. Nothing here is readable without the password.
 
-- `index.html`: the page; it decrypts `data/jobs.enc.json` in the browser.
-- `tools/cw_crypto.py`: encrypt or decrypt the data file (`CW_PASSWORD` env var).
+- `keys/public.pem` seals new data (it cannot open anything).
+- `keys/private.enc.json` is the private key, encrypted with the password.
+- `data/jobs.enc.json` holds the sealed listings; `index.html` opens them in the browser after the password is entered.
+- `tools/cw_crypto.py`: `seal` (no secret needed), `open`, `keygen`, `repass` (change the password).
 
 Updated daily by a scheduled task.
