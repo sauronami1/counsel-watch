@@ -1,0 +1,529 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#f4f6f7">
+<title>Counsel Watch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column of docket-style listings under a sticky filter bar; "red tape" accent marks what needs her attention. */
+:root{
+  --paper:#f4f6f7;
+  --sheet:#ffffff;
+  --ink:#1b2430;
+  --ink-2:#4a5664;
+  --ink-3:#7b8794;
+  --rule:#dde3e8;
+  --tape:#a3233a;
+  --tape-soft:#f6e4e7;
+  --seal:#1f5c4a;
+  --seal-soft:#e2efea;
+  --warn:#8a5a00;
+  --warn-soft:#fbf0d9;
+  --chip:#eef1f4;
+  --focus:#2d6cdf;
+  --display:"Spectral", Georgia, "Times New Roman", serif;
+  --body:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#11161c; --sheet:#182029; --ink:#e7ecf1; --ink-2:#b2bdc8; --ink-3:#7f8b97; --rule:#2a3440;
+    --tape:#e0677c; --tape-soft:#3a1c24; --seal:#6cc3a4; --seal-soft:#173129; --warn:#e3b45c; --warn-soft:#3a2d14;
+    --chip:#222c37; --focus:#7aa7ff; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#11161c; --sheet:#182029; --ink:#e7ecf1; --ink-2:#b2bdc8; --ink-3:#7f8b97; --rule:#2a3440;
+  --tape:#e0677c; --tape-soft:#3a1c24; --seal:#6cc3a4; --seal-soft:#173129; --warn:#e3b45c; --warn-soft:#3a2d14;
+  --chip:#222c37; --focus:#7aa7ff; color-scheme:dark;
+}
+*{box-sizing:border-box}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--paper)}
+.wrap{max-width:860px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:4px}
+
+header.top{padding-block:28px 14px}
+.eyebrow{font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--tape)}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(30px,6vw,42px);line-height:1.05;margin:6px 0 6px;text-wrap:balance;letter-spacing:-.01em}
+.lede{color:var(--ink-2);margin:0;max-width:62ch}
+.status{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:14px;font-family:var(--mono);font-size:12.5px;color:var(--ink-2)}
+.status b{color:var(--ink);font-weight:500}
+.status .stale{color:var(--warn)}
+
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--paper);border-bottom:1px solid var(--rule);padding-block:10px}
+.tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
+.tab{appearance:none;border:0;background:none;font:500 14px var(--body);color:var(--ink-2);padding:8px 12px;border-radius:999px;cursor:pointer;white-space:nowrap}
+.tab[aria-selected="true"]{background:var(--ink);color:var(--paper)}
+.tab .n{font-family:var(--mono);font-size:12px;opacity:.75;margin-left:4px}
+.filters{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;align-items:center}
+.search{flex:1 1 200px;min-width:0;border:1px solid var(--rule);background:var(--sheet);color:var(--ink);border-radius:8px;padding:8px 10px;font:14px var(--body)}
+select{border:1px solid var(--rule);background:var(--sheet);color:var(--ink);border-radius:8px;padding:8px 8px;font:14px var(--body);max-width:100%}
+.more{appearance:none;border:1px solid var(--rule);background:var(--sheet);color:var(--ink);border-radius:8px;padding:8px 10px;font:500 14px var(--body);cursor:pointer}
+.chiprow{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.fchip{appearance:none;border:1px solid var(--rule);background:var(--sheet);color:var(--ink-2);border-radius:999px;padding:5px 11px;font:500 13px var(--body);cursor:pointer}
+.fchip[aria-pressed="true"]{border-color:var(--ink);background:var(--ink);color:var(--paper)}
+.panel{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:8px}
+.panel label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--ink-3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.05em}
+
+main{padding-block:14px 40px}
+.count{font-family:var(--mono);font-size:12.5px;color:var(--ink-3);margin:4px 0 10px}
+.list{display:flex;flex-direction:column;gap:12px}
+
+.job{background:var(--sheet);border:1px solid var(--rule);border-radius:10px;padding:16px 16px 14px;display:flex;flex-direction:column;gap:10px;position:relative}
+.job.is-new{border-left:4px solid var(--tape)}
+.job.closed{opacity:.7}
+.job .head{display:flex;gap:10px;justify-content:space-between;align-items:flex-start}
+.job .who{min-width:0}
+.job h2{font-family:var(--display);font-weight:600;font-size:20px;line-height:1.2;margin:0;text-wrap:balance}
+.job h2 a{text-decoration:none}
+.job h2 a:hover{text-decoration:underline;text-decoration-color:var(--tape)}
+.employer{font-weight:600;margin-top:3px}
+.where{color:var(--ink-2);font-size:14px}
+.dates{flex:none;text-align:right;font-family:var(--mono);font-size:12px;color:var(--ink-2);display:flex;flex-direction:column;gap:2px;font-variant-numeric:tabular-nums}
+.dates .soon{color:var(--tape);font-weight:500}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.tag{font:500 12px var(--body);padding:3px 8px;border-radius:5px;background:var(--chip);color:var(--ink-2)}
+.tag.cat{background:var(--tape-soft);color:var(--tape)}
+.tag.new{background:var(--tape);color:#fff}
+.tag.fit{background:var(--seal);color:var(--sheet)}
+.tag.adj{background:var(--warn-soft);color:var(--warn)}
+.tag.state{background:var(--seal-soft);color:var(--seal)}
+.tag.closed{background:var(--ink-3);color:var(--sheet)}
+.summary{margin:0;color:var(--ink);max-width:70ch}
+.why{margin:0;font-size:13.5px;color:var(--ink-2)}
+.why::before{content:"Fit · ";font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--seal)}
+.meta{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;color:var(--ink-2)}
+.meta span b{font-weight:600;color:var(--ink)}
+.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;border-top:1px dashed var(--rule);padding-top:10px}
+.btn{appearance:none;border:1px solid var(--rule);background:transparent;color:var(--ink);border-radius:8px;padding:7px 11px;font:500 13.5px var(--body);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:5px}
+.btn:hover{border-color:var(--ink-3)}
+.btn.primary{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.btn[aria-pressed="true"]{background:var(--seal-soft);color:var(--seal);border-color:var(--seal)}
+.btn.quiet{border-color:transparent;color:var(--ink-3)}
+.src{margin-left:auto;font-family:var(--mono);font-size:11.5px;color:var(--ink-3)}
+.note{width:100%;min-height:58px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);border-radius:8px;padding:8px 10px;font:14px var(--body);resize:vertical}
+
+.empty{background:var(--sheet);border:1px dashed var(--rule);border-radius:10px;padding:26px 20px;text-align:center;color:var(--ink-2)}
+.empty h3{font-family:var(--display);font-size:20px;margin:0 0 6px;color:var(--ink)}
+.notice{background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:9px 12px;font-size:13.5px;margin-bottom:10px}
+
+footer{border-top:1px solid var(--rule);padding-block:20px 36px;color:var(--ink-2);font-size:13.5px}
+footer h3{font-family:var(--display);font-size:17px;margin:0 0 6px;color:var(--ink)}
+footer p{margin:0 0 8px;max-width:70ch}
+.toprow{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.lock{position:fixed;inset:0;z-index:30;background:var(--paper);display:grid;place-items:center;padding:24px max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px))}
+.lockcard{width:100%;max-width:360px;display:flex;flex-direction:column;gap:12px}
+.lockcard h2{font-family:var(--display);font-size:34px;margin:0;line-height:1.05}
+.lockcard p{margin:0;color:var(--ink-2)}
+.pw{border:1px solid var(--rule);background:var(--sheet);color:var(--ink);border-radius:8px;padding:12px;font:16px var(--body)}
+.remember{display:flex;gap:8px;align-items:center;font-size:14px;color:var(--ink-2)}
+.lockcard .btn{justify-content:center;padding:11px;font-size:15px}
+.err{color:var(--tape);font-size:14px;min-height:1.2em}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--paper);padding:8px 14px;border-radius:8px;font-size:13.5px;z-index:20}
+@media (max-width:520px){
+  .job .head{flex-direction:column}
+  .dates{text-align:left;flex-direction:row;flex-wrap:wrap;gap:2px 12px}
+  .src{margin-left:0;width:100%}
+}
+@media (prefers-reduced-motion:no-preference){.job{transition:border-color .15s}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div class="toprow"><div class="eyebrow">Toronto · GTA · Remote Ontario</div><button class="btn quiet" id="lockBtn" type="button" hidden>Lock</button></div>
+    <h1>Counsel Watch</h1>
+    <p class="lede">Open lawyer roles in public policy, regulatory, telecom and privacy law. Every listing is checked against the employer's own posting, and anything older than 30 days or past its closing date drops off.</p>
+    <div class="status" id="status"><span>Connecting to the listings…</span></div>
+  </header>
+</div>
+
+<div class="bar">
+  <div class="wrap">
+    <div class="tabs" role="tablist" aria-label="Views">
+      <button class="tab" role="tab" id="tab-open" data-view="open" aria-selected="true">Open roles<span class="n" id="n-open"></span></button>
+      <button class="tab" role="tab" id="tab-saved" data-view="saved" aria-selected="false">Saved<span class="n" id="n-saved"></span></button>
+      <button class="tab" role="tab" id="tab-applied" data-view="applied" aria-selected="false">Applied<span class="n" id="n-applied"></span></button>
+      <button class="tab" role="tab" id="tab-hidden" data-view="hidden" aria-selected="false">Not for me<span class="n" id="n-hidden"></span></button>
+    </div>
+    <div class="filters">
+      <input class="search" id="q" type="search" placeholder="Search title, employer, keyword" aria-label="Search">
+      <select id="sort" aria-label="Sort">
+        <option value="fit">Best fit first</option>
+        <option value="new">Newest first</option>
+        <option value="closing">Closing soonest</option>
+        <option value="salary">Highest salary</option>
+      </select>
+      <button class="more" id="moreBtn" aria-expanded="false" aria-controls="panel">More filters</button>
+    </div>
+    <div class="chiprow" id="cats" aria-label="Practice areas">
+      <button class="fchip" data-cat="policy" aria-pressed="false">Public policy</button>
+      <button class="fchip" data-cat="regulatory" aria-pressed="false">Regulatory</button>
+      <button class="fchip" data-cat="telecom" aria-pressed="false">Telecom</button>
+      <button class="fchip" data-cat="privacy" aria-pressed="false">Privacy</button>
+    </div>
+    <div class="panel" id="panel" hidden>
+      <label for="f-area">Where
+        <select id="f-area"><option value="">Anywhere listed</option><option value="toronto">Toronto</option><option value="gta">GTA outside Toronto</option><option value="remote">Remote</option></select>
+      </label>
+      <label for="f-age">Posted
+        <select id="f-age"><option value="30">Last 30 days</option><option value="14">Last 14 days</option><option value="7">Last 7 days</option><option value="2">Last 2 days</option></select>
+      </label>
+      <label for="f-level">Level
+        <select id="f-level"><option value="">Any level</option><option value="junior">Junior (0–3 yrs)</option><option value="mid">Mid (4–7 yrs)</option><option value="senior">Senior (8+ yrs)</option></select>
+      </label>
+      <label for="f-type">Role type
+        <select id="f-type"><option value="">Lawyer + related roles</option><option value="lawyer">Lawyer roles only</option></select>
+      </label>
+      <label for="f-fit">Fit
+        <select id="f-fit"><option value="">Strong and partial fits</option><option value="strong">Strong fits only</option></select>
+      </label>
+      <label for="f-term">Term
+        <select id="f-term"><option value="">Permanent or contract</option><option value="permanent">Permanent only</option><option value="contract">Contract only</option></select>
+      </label>
+    </div>
+  </div>
+</div>
+
+<main class="wrap">
+  <div id="notice"></div>
+  <div class="count" id="count"></div>
+  <div class="list" id="list">
+    <div class="empty"><h3>Loading listings</h3><p>Open roles appear here as soon as the board connects.</p></div>
+  </div>
+</main>
+
+<div class="wrap">
+  <footer>
+    <h3>How this board works</h3>
+    <p>Only people with the password can read this board: the listings are encrypted, and the page decrypts them on your device. Every morning a search runs across the Ontario Public Service, Ontario regulators and agencies, municipalities, federal bodies with Toronto offices, telecom carriers, banks and tech companies, legal job boards, and Job Bank. Each role is only added after its posting page is opened and confirmed open, in the right place, and posted in the last 30 days. Roles are re-checked daily and drop off when they close.</p>
+    <p><span class="tag fit">Strong fit</span> means the work itself is policy, regulatory, telecom or privacy law. Other roles touch those areas but are partly commercial or general counsel work. Roles marked <span class="tag adj">Related role</span> are not lawyer positions but are policy, privacy or regulatory jobs where a law degree is a strong fit. <b>Saved</b>, <b>Applied</b> and <b>Not for me</b> sort roles into their own tabs; notes stay with each role.</p>
+    <p id="trackMode"></p>
+  </footer>
+</div>
+<div class="lock" id="lock" hidden>
+  <form class="lockcard" id="lockForm" autocomplete="on">
+    <div class="eyebrow">Private board</div>
+    <h2>Counsel Watch</h2>
+    <p>Enter the password to open the listings.</p>
+    <input type="text" name="username" value="counsel-watch" autocomplete="username" hidden>
+    <label class="sr" for="pw">Password</label>
+    <input id="pw" class="pw" type="password" autocomplete="current-password" placeholder="Password" required>
+    <label class="remember"><input id="remember" type="checkbox" checked> Keep me signed in on this device</label>
+    <button class="btn primary" id="unlockBtn" type="submit">Unlock</button>
+    <p class="err" id="lockErr" role="alert"></p>
+  </form>
+</div>
+<div class="toast" id="toast" hidden role="status"></div>
+
+<script>
+(function(){
+  "use strict";
+  const $ = s => document.querySelector(s);
+  const state = {
+    jobs: new Map(), meta: null, track: {}, view: "open",
+    cats: new Set(), q: "", sort: "fit", fit: "", area: "", age: 30, level: "", type: "", term: "",
+    mode: "connecting", // shared | local | connecting | none
+    db: null, lastVisit: 0, notesOpen: new Set()
+  };
+  const LS = {
+    get(k, d){ try{ const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); }catch(e){ return d; } },
+    set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+  };
+  state.lastVisit = LS.get("cw-lastVisit", 0);
+  const prefs = LS.get("cw-prefs", null);
+  if (prefs){ Object.assign(state, {sort:prefs.sort||"fit", fit:prefs.fit||"", area:prefs.area||"", age:prefs.age||30, level:prefs.level||"", type:prefs.type||"", term:prefs.term||""}); (prefs.cats||[]).forEach(c=>state.cats.add(c)); }
+  setTimeout(()=>LS.set("cw-lastVisit", Date.now()), 8000);
+
+  // ---------- dates (Toronto calendar days) ----------
+  function todayISO(){
+    try{ return new Intl.DateTimeFormat("en-CA",{timeZone:"America/Toronto",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date()); }
+    catch(e){ return new Date().toISOString().slice(0,10); }
+  }
+  function dayNum(iso){ const [y,m,d] = String(iso).split("-").map(Number); return Date.UTC(y,(m||1)-1,d||1)/86400000; }
+  function daysAgo(iso){ return iso ? Math.round(dayNum(todayISO()) - dayNum(iso)) : null; }
+  function daysLeft(iso){ return iso ? Math.round(dayNum(iso) - dayNum(todayISO())) : null; }
+  const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  function fmt(iso){ if(!iso) return ""; const [y,m,d]=iso.split("-").map(Number); return MON[m-1]+" "+d; }
+  function ago(n){ if(n==null) return ""; if(n<=0) return "today"; if(n===1) return "yesterday"; return n+" days ago"; }
+
+  // ---------- tracking ----------
+  function trackOf(id){ return state.track[id] || {}; }
+  async function setTrack(id, patch){
+    const cur = Object.assign({}, trackOf(id), patch, {job_id: id, updated: new Date().toISOString()});
+    state.track[id] = cur; render();
+    if (state.mode === "shared" && state.db){
+      try{ await state.db.doc("tracking/"+safeId(id)).set(cur); return; }
+      catch(e){
+        if (e && (e.code === "invalid_argument" || e.code === "not_granted")){ switchToLocal(); }
+        else { toast("Couldn't save that change. Check your connection and try again."); return; }
+      }
+    }
+    const local = LS.get("cw-track", {}); local[id] = cur; LS.set("cw-track", local);
+  }
+  function switchToLocal(){
+    state.mode = "local";
+    const local = LS.get("cw-track", {});
+    state.track = Object.assign({}, state.track, local);
+    describeMode(); render();
+  }
+  function safeId(id){ return String(id).replace(/[^A-Za-z0-9_\-.~:@+]/g,"-").slice(0,180); }
+  function describeMode(){
+    const el = $("#trackMode");
+    if (state.mode === "shared") el.textContent = "Saved, Applied, Not for me and notes are shared: they show up on every device and for anyone else with edit access.";
+    else if (state.mode === "local") el.textContent = "Saved, Applied, Not for me and notes stay on the device where you set them. They are never uploaded.";
+    else el.textContent = "";
+  }
+
+  // ---------- filtering ----------
+  function visibleJobs(){
+    const q = state.q.trim().toLowerCase();
+    const out = []; const counts = {open:0,saved:0,applied:0,hidden:0};
+    for (const j of state.jobs.values()){
+      const t = trackOf(j.id).state || "";
+      const isOpen = (j.status || "open") === "open";
+      const age = daysAgo(j.posted_date);
+      const fresh = age != null && age <= 30;
+      const left = daysLeft(j.deadline);
+      const notExpired = left == null || left >= 0;
+      if (isOpen && fresh && notExpired && t !== "hidden" && t !== "applied") counts.open++;
+      if (t === "saved") counts.saved++;
+      if (t === "applied") counts.applied++;
+      if (t === "hidden") counts.hidden++;
+
+      if (state.view === "open"){ if (!(isOpen && fresh && notExpired) || t === "hidden" || t === "applied") continue; if (age > state.age) continue; }
+      else if (t !== state.view) continue;
+
+      if (state.cats.size && !(j.categories||[]).some(c => state.cats.has(c))) continue;
+      if (state.area && j.area !== state.area) continue;
+      if (state.level && j.seniority !== state.level) continue;
+      if (state.type && j.role_type !== state.type) continue;
+      if (state.term && j.term !== state.term) continue;
+      if (state.fit && j.fit !== state.fit) continue;
+      if (q){
+        const hay = [j.title,j.employer,j.location_text,j.summary,j.why_match,(j.categories||[]).join(" "),j.source].join(" ").toLowerCase();
+        if (!q.split(/\s+/).every(w => hay.includes(w))) continue;
+      }
+      out.push(j);
+    }
+    const s = state.sort;
+    out.sort((a,b)=>{
+      if (s === "closing"){ const A = a.deadline || "9999", B = b.deadline || "9999"; if (A!==B) return A<B?-1:1; }
+      if (s === "fit"){ const A = a.fit === "strong" ? 0 : 1, B = b.fit === "strong" ? 0 : 1; if (A!==B) return A-B; }
+      if (s === "salary"){ const A = a.salary_max||a.salary_min||0, B = b.salary_max||b.salary_min||0; if (A!==B) return B-A; }
+      const A = a.posted_date||"", B = b.posted_date||""; if (A!==B) return A<B?1:-1;
+      return (a.title||"").localeCompare(b.title||"");
+    });
+    return {out, counts};
+  }
+
+  // ---------- render ----------
+  const CAT = {policy:"Public policy", regulatory:"Regulatory", telecom:"Telecom", privacy:"Privacy"};
+  const LEVEL = {junior:"Junior", mid:"Mid-level", senior:"Senior"};
+  const MODE = {onsite:"On-site", hybrid:"Hybrid", remote:"Remote"};
+  function el(tag, attrs, ...kids){
+    const n = document.createElement(tag);
+    if (attrs) for (const k in attrs){ const v = attrs[k]; if (v == null || v === false) continue; if (k === "class") n.className = v; else if (k === "text") n.textContent = v; else if (k.startsWith("on")) n.addEventListener(k.slice(2), v); else n.setAttribute(k, v === true ? "" : v); }
+    for (const k of kids){ if (k == null || k === false) continue; n.append(k.nodeType ? k : document.createTextNode(String(k))); }
+    return n;
+  }
+  function money(n){ return "$" + Math.round(n/1000) + "k"; }
+  function salary(j){
+    if (j.salary_min && j.salary_max) return money(j.salary_min) + "–" + money(j.salary_max);
+    if (j.salary_min) return "from " + money(j.salary_min);
+    if (j.salary_max) return "up to " + money(j.salary_max);
+    return j.salary_text || "";
+  }
+  function isNew(j){
+    if (!state.lastVisit || !j.first_seen) return false;
+    return Date.parse(j.first_seen) > state.lastVisit;
+  }
+
+  function card(j){
+    const tr = trackOf(j.id); const t = tr.state || "";
+    const left = daysLeft(j.deadline); const age = daysAgo(j.posted_date);
+    const closed = (j.status && j.status !== "open") || (left != null && left < 0);
+    const tags = el("div",{class:"tags"},
+      isNew(j) && !closed ? el("span",{class:"tag new",text:"New"}) : null,
+      j.fit === "strong" ? el("span",{class:"tag fit",text:"Strong fit"}) : null,
+      closed ? el("span",{class:"tag closed",text:"Closed"}) : null,
+      ...(j.categories||[]).map(c => el("span",{class:"tag cat",text:CAT[c]||c})),
+      j.role_type === "adjacent" ? el("span",{class:"tag adj",text:"Related role"}) : null,
+      LEVEL[j.seniority] ? el("span",{class:"tag",text:LEVEL[j.seniority] + (j.years_required ? " · " + j.years_required : "")}) : (j.years_required ? el("span",{class:"tag",text:j.years_required}) : null),
+      j.term === "contract" ? el("span",{class:"tag",text:j.term_note || "Contract"}) : null,
+      j.language && /bilingual/i.test(j.language) ? el("span",{class:"tag",text:"Bilingual EN/FR"}) : null,
+      t === "saved" ? el("span",{class:"tag state",text:"Saved"}) : null,
+      t === "applied" ? el("span",{class:"tag state",text:"Applied" + (tr.updated ? " " + fmt(tr.updated.slice(0,10)) : "")}) : null
+    );
+    const dates = el("div",{class:"dates"},
+      el("span",{text:"Posted " + (j.date_confidence === "approx" ? "≈ " : "") + ago(age)}),
+      j.deadline ? el("span",{class: left != null && left <= 5 && left >= 0 ? "soon" : null, text: left == null ? "" : (left < 0 ? "Closed " + fmt(j.deadline) : left === 0 ? "Closes today" : "Closes " + fmt(j.deadline) + " (" + left + "d)")}) : el("span",{text:"No closing date"})
+    );
+    const sal = salary(j);
+    const meta = el("div",{class:"meta"},
+      sal ? el("span",null,el("b",{text:sal})) : null,
+      j.work_mode && MODE[j.work_mode] ? el("span",{text:MODE[j.work_mode]}) : null,
+      j.term === "permanent" ? el("span",{text:"Permanent"}) : null
+    );
+    const btn = (label, st) => el("button",{class:"btn","aria-pressed": String(t===st), onclick:()=>setTrack(j.id,{state: t===st ? "" : st})}, label);
+    const noteOpen = state.notesOpen.has(j.id) || !!tr.note;
+    const note = noteOpen ? el("textarea",{class:"note",id:"note-"+safeId(j.id),placeholder:"Notes: contacts, cover letter angle, follow-up date…","aria-label":"Notes for "+j.title}) : null;
+    if (note){ note.value = tr.note || ""; note.addEventListener("change", ()=>setTrack(j.id,{note: note.value})); }
+    return el("article",{class:"job" + (isNew(j)&&!closed?" is-new":"") + (closed?" closed":""), id:"job-"+safeId(j.id)},
+      el("div",{class:"head"},
+        el("div",{class:"who"},
+          el("h2",null, el("a",{href:j.url, target:"_blank", rel:"noopener", text:j.title})),
+          el("div",{class:"employer",text:j.employer}),
+          el("div",{class:"where",text:j.location_text || ""})
+        ),
+        dates
+      ),
+      tags,
+      j.summary ? el("p",{class:"summary",text:j.summary}) : null,
+      j.why_match ? el("p",{class:"why",text:j.why_match}) : null,
+      (sal || j.work_mode) ? meta : null,
+      note,
+      el("div",{class:"actions"},
+        el("a",{class:"btn primary",href:j.apply_url || j.url,target:"_blank",rel:"noopener"},"Open posting ↗"),
+        btn("Save","saved"), btn("Applied","applied"), btn("Not for me","hidden"),
+        !noteOpen ? el("button",{class:"btn quiet",onclick:()=>{state.notesOpen.add(j.id); render(); const n=document.getElementById("note-"+safeId(j.id)); if(n) n.focus();}},"Add note") : null,
+        el("span",{class:"src",text:(j.source||"") + (j.last_verified ? " · checked " + fmt(String(j.last_verified).slice(0,10)) : "")})
+      )
+    );
+  }
+
+  function render(){
+    const {out, counts} = visibleJobs();
+    for (const k of ["open","saved","applied","hidden"]) $("#n-"+k).textContent = counts[k] ? counts[k] : "";
+    document.querySelectorAll(".tab").forEach(b => b.setAttribute("aria-selected", String(b.dataset.view === state.view)));
+    document.querySelectorAll(".fchip").forEach(b => b.setAttribute("aria-pressed", String(state.cats.has(b.dataset.cat))));
+    const list = $("#list");
+    // keep focus inside an open note while re-rendering
+    const active = document.activeElement && document.activeElement.classList.contains("note") ? document.activeElement.id : null;
+    const activeVal = active ? document.activeElement.value : null;
+    list.replaceChildren();
+    if (state.mode === "none" || state.mode === "locked"){
+      $("#count").textContent = ""; return;
+    }
+    if (!state.jobs.size){
+      list.append(el("div",{class:"empty"}, el("h3",{text: state.mode==="connecting" ? "Loading listings" : "No roles on the board yet"}), el("p",{text: state.mode==="connecting" ? "Open roles appear here as soon as the board connects." : "The morning search adds verified roles here. Check back after the next refresh."})));
+      $("#count").textContent = ""; return;
+    }
+    const newCount = out.filter(isNew).length;
+    $("#count").textContent = out.length + (out.length === 1 ? " role" : " roles") + (state.view === "open" && newCount ? " · " + newCount + " new since your last visit" : "");
+    if (!out.length){
+      const msg = {open:"No open roles match these filters. Try clearing a practice area or widening the posted window.", saved:"Nothing saved yet. Tap Save on a role to keep it here.", applied:"Roles you mark as Applied collect here, with the date you marked them.", hidden:"Roles you mark Not for me move here, out of the main list."}[state.view];
+      list.append(el("div",{class:"empty"}, el("p",{text:msg}))); return;
+    }
+    const frag = document.createDocumentFragment();
+    out.forEach(j => frag.append(card(j)));
+    list.append(frag);
+    if (active){ const n = document.getElementById(active); if (n){ n.value = activeVal; n.focus(); } }
+  }
+
+  function renderStatus(){
+    const s = $("#status"); s.replaceChildren();
+    const m = state.meta;
+    if (!m){ s.append(el("span",{text: state.mode === "none" ? "Not connected" : "Connecting to the listings…"})); return; }
+    const when = m.last_run ? new Date(m.last_run) : null;
+    let whenText = "never";
+    if (when && !isNaN(when)){
+      try{ whenText = when.toLocaleString("en-CA",{timeZone:"America/Toronto",weekday:"short",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}); }catch(e){ whenText = when.toISOString(); }
+    }
+    const hours = when ? (Date.now() - when.getTime())/3600000 : 999;
+    s.append(el("span",{class: hours > 30 ? "stale" : null}, "Last checked ", el("b",{text:whenText}), hours > 30 ? " · overdue" : ""));
+    if (m.sources_checked != null) s.append(el("span",null, el("b",{text:String(m.sources_checked)}), " sources searched"));
+    if (m.added_last_run != null) s.append(el("span",null, el("b",{text:String(m.added_last_run)}), " added last run"));
+  }
+
+  // ---------- controls ----------
+  function savePrefs(){ LS.set("cw-prefs",{sort:state.sort,fit:state.fit,area:state.area,age:state.age,level:state.level,type:state.type,term:state.term,cats:[...state.cats]}); }
+  document.querySelectorAll(".tab").forEach(b => b.addEventListener("click", ()=>{ state.view = b.dataset.view; try{ history.replaceState(null,"","#"+state.view); }catch(e){} render(); window.scrollTo({top:0}); }));
+  document.querySelectorAll(".fchip").forEach(b => b.addEventListener("click", ()=>{ const c=b.dataset.cat; state.cats.has(c)?state.cats.delete(c):state.cats.add(c); savePrefs(); render(); }));
+  let qt; $("#q").addEventListener("input", e => { clearTimeout(qt); qt = setTimeout(()=>{ state.q = e.target.value; render(); }, 120); });
+  const bind = (id,key,num) => { const n=$(id); n.value = String(state[key]); n.addEventListener("change", ()=>{ state[key] = num ? Number(n.value) : n.value; savePrefs(); render(); }); };
+  bind("#sort","sort"); bind("#f-area","area"); bind("#f-age","age",true); bind("#f-level","level"); bind("#f-type","type"); bind("#f-term","term"); bind("#f-fit","fit");
+  $("#moreBtn").addEventListener("click", ()=>{ const p=$("#panel"); p.hidden=!p.hidden; $("#moreBtn").setAttribute("aria-expanded", String(!p.hidden)); });
+  if (state.area||state.level||state.type||state.term||state.fit||state.age!==30){ $("#panel").hidden=false; $("#moreBtn").setAttribute("aria-expanded","true"); }
+  const h = (location.hash||"").slice(1); if (["open","saved","applied","hidden"].includes(h)) state.view = h;
+  let tt; function toast(msg){ const t=$("#toast"); t.textContent=msg; t.hidden=false; clearTimeout(tt); tt=setTimeout(()=>t.hidden=true,3500); }
+  render();
+
+  // ---------- data ----------
+  // ---------- encrypted data ----------
+  const b64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+  const tob64 = u8 => btoa(String.fromCharCode(...u8));
+  let ENC = null;
+  async function keyFromPassword(pw, env){
+    const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(pw), "PBKDF2", false, ["deriveBits"]);
+    const bits = await crypto.subtle.deriveBits({name:"PBKDF2", hash:"SHA-256", salt:b64(env.salt), iterations:env.iter}, base, 256);
+    return new Uint8Array(bits);
+  }
+  async function openWith(raw){
+    const key = await crypto.subtle.importKey("raw", raw, "AES-GCM", false, ["decrypt"]);
+    const plain = await crypto.subtle.decrypt({name:"AES-GCM", iv:b64(ENC.iv)}, key, b64(ENC.ct));
+    return JSON.parse(new TextDecoder().decode(plain));
+  }
+  function load(data){
+    const m = new Map();
+    (data.jobs || []).forEach(j => m.set(j.id, j));
+    state.jobs = m; state.meta = data.meta || null;
+    state.mode = "local"; state.track = Object.assign({}, LS.get("cw-track", {}));
+    describeMode(); renderStatus(); render();
+    $("#lock").hidden = true; $("#lockBtn").hidden = false;
+  }
+  async function start(){
+    try{
+      const r = await fetch("data/jobs.enc.json?t=" + Date.now(), {cache:"no-store"});
+      if (!r.ok) throw new Error("http " + r.status);
+      ENC = await r.json();
+    }catch(e){
+      state.mode = "none"; render();
+      $("#status").replaceChildren(el("span",{class:"stale",text:"Couldn't load the listings. Check your connection and reload."}));
+      return;
+    }
+    const saved = LS.get("cw-key", null);
+    if (saved && saved.salt === ENC.salt){
+      try{ load(await openWith(b64(saved.k))); return; }catch(e){ LS.set("cw-key", null); }
+    }
+    showLock();
+  }
+  function showLock(){
+    state.mode = "locked"; render();
+    $("#status").replaceChildren(el("span",{text:"Locked"}));
+    $("#lock").hidden = false; $("#lockBtn").hidden = true;
+    setTimeout(()=>{ try{ $("#pw").focus(); }catch(e){} }, 50);
+  }
+  $("#lockForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    const pw = $("#pw").value; const btn = $("#unlockBtn"); const err = $("#lockErr");
+    if (!pw || !ENC) return;
+    btn.disabled = true; btn.textContent = "Unlocking…"; err.textContent = "";
+    try{
+      const raw = await keyFromPassword(pw, ENC);
+      const data = await openWith(raw);
+      if ($("#remember").checked) LS.set("cw-key", {salt: ENC.salt, k: tob64(raw)});
+      $("#pw").value = "";
+      load(data);
+    }catch(x){
+      err.textContent = "That password didn't work. Check it and try again.";
+    }finally{ btn.disabled = false; btn.textContent = "Unlock"; }
+  });
+  $("#lockBtn").addEventListener("click", () => { LS.set("cw-key", null); state.jobs = new Map(); state.meta = null; showLock(); });
+  start();
+})();
+</script>
+</body>
+</html>
